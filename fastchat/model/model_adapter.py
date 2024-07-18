@@ -2444,9 +2444,47 @@ class RekaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
 
+class MambaLlama3Adapter(BaseModelAdapter):
+    """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
+
+    def match(self, model_path: str):
+        return "llama" in model_path.lower() and "mamba" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from mamba.hybrid_wrapper import MambaTransformerHybridModelWrapper
+        print("llama3 mamba adaptor")
+        print("llama3 mamba model_path:", model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16).model
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        print("model:", model)
+        return model, tokenizer
+
+    def get_default_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("llama-3")
+
+class MambaZephyrAdapter(BaseModelAdapter):
+    """The model adapter for mamba and hybrid mamba"""
+
+    use_fast_tokenizer = True
+    
+    def match(self, model_path: str):
+        return "mamba" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from mamba.hybrid_wrapper import MambaTransformerHybridModelWrapper
+        print("zephyr mamba adaptor")
+        print("zephyr mamba model_path:", model_path)
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16).model
+        print("model:", model)
+        return model, tokenizer
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
+register_model_adapter(MambaLlama3Adapter)
+register_model_adapter(MambaZephyrAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
