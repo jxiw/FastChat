@@ -2455,14 +2455,11 @@ class MambaLlama3Adapter(BaseModelAdapter):
         print("llama3 mamba adaptor")
         print("llama3 mamba model_path:", model_path)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16).model
+        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16)
         model.config.eos_token_id = tokenizer.eos_token_id
         model.config.pad_token_id = tokenizer.pad_token_id
         print("model:", model)
         return model, tokenizer
-
-    def get_default_conv_template(self, model_path: str) -> Conversation:
-        return get_conv_template("llama-3")
 
 class MambaZephyrAdapter(BaseModelAdapter):
     """The model adapter for mamba and hybrid mamba"""
@@ -2477,7 +2474,7 @@ class MambaZephyrAdapter(BaseModelAdapter):
         print("zephyr mamba adaptor")
         print("zephyr mamba model_path:", model_path)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16).model
+        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16)
         print("model:", model)
         return model, tokenizer
 
