@@ -2444,44 +2444,65 @@ class RekaAdapter(BaseModelAdapter):
     def get_default_conv_template(self, model_path: str) -> Conversation:
         return get_conv_template("api_based_default")
 
-class MambaLlama3Adapter(BaseModelAdapter):
-    """The model adapter for Llama-3 (e.g., meta-llama/Meta-Llama-3-8B-Instruct)"""
+class MambaAdapter(BaseModelAdapter):
+    """The model adapter for Mamba and hybrid Mamba"""
 
-    def match(self, model_path: str):
-        return "llama" in model_path.lower() and "mamba" in model_path.lower()
-
-    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
-        from mamba.hybrid_wrapper import MambaTransformerHybridModelWrapper
-        print("llama3 mamba adaptor")
-        print("llama3 mamba model_path:", model_path)
-        tokenizer = AutoTokenizer.from_pretrained(model_path)
-        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-        model.config.eos_token_id = tokenizer.eos_token_id
-        model.config.pad_token_id = tokenizer.pad_token_id
-        print("model:", model)
-        return model, tokenizer
-
-class MambaZephyrAdapter(BaseModelAdapter):
-    """The model adapter for mamba and hybrid mamba"""
-
-    use_fast_tokenizer = True
-    
     def match(self, model_path: str):
         return "mamba" in model_path.lower()
 
     def load_model(self, model_path: str, from_pretrained_kwargs: dict):
         from mamba.hybrid_wrapper import MambaTransformerHybridModelWrapper
-        print("zephyr mamba adaptor")
-        print("zephyr mamba model_path:", model_path)
         tokenizer = AutoTokenizer.from_pretrained(model_path)
         model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16)
-        print("model:", model)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
         return model, tokenizer
+
+class Mamba2Adapter(BaseModelAdapter):
+    """The model adapter for Mamba2 and hybrid Mamba2"""
+    
+    def match(self, model_path: str):
+        return "mamba2" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        from mamba2.hybrid_wrapper import MambaTransformerHybridModelWrapper
+        tokenizer = AutoTokenizer.from_pretrained(model_path)
+        model = MambaTransformerHybridModelWrapper.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+class FalconMambaAdapter(BaseModelAdapter):
+
+    def match(self, model_path: str):
+        return "falcon-mamba-7b-instruct" in model_path.lower()
+
+    def load_model(self, model_path: str, from_pretrained_kwargs: dict):
+        revision = from_pretrained_kwargs.get("revision", "main")
+        tokenizer = AutoTokenizer.from_pretrained(model_path, revision=revision)
+        model = AutoModelForCausalLM.from_pretrained(
+            model_path,
+            torch_dtype=torch.bfloat16,
+        )
+        model.config.eos_token_id = tokenizer.eos_token_id
+        model.config.pad_token_id = tokenizer.pad_token_id
+        return model, tokenizer
+
+class RecurrentGemmaAdapter(BaseModelAdapter):
+    """The model adapter for google/gemma"""
+
+    def match(self, model_path: str):
+        return "google/recurrentgemma-9b-it" in model_path.lower()
+
+    def get_defaulRecurrentGemmaAdaptert_conv_template(self, model_path: str) -> Conversation:
+        return get_conv_template("gemma")
 
 # Note: the registration order matters.
 # The one registered earlier has a higher matching priority.
-register_model_adapter(MambaLlama3Adapter)
-register_model_adapter(MambaZephyrAdapter)
+register_model_adapter(RecurrentGemmaAdapter)
+register_model_adapter(FalconMambaAdapter)
+register_model_adapter(Mamba2Adapter)
+register_model_adapter(MambaAdapter)
 register_model_adapter(PeftModelAdapter)
 register_model_adapter(StableVicunaAdapter)
 register_model_adapter(VicunaAdapter)
